@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ASP.NET Core runs only on .NET; net8.0 covers .NET 8, 9, 10 hosts. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsAotCompatible>true</IsAotCompatible>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>AiProxy.Mcp.Sdk.AspNetCore</PackageId>
+    <Description>ASP.NET Core middleware for message_signed MCP endpoints: verifies Mcp-Message-Signature and exposes the signed caller as HttpContext.User.</Description>
+    <PackageTags>mcp;modelcontextprotocol;jws;es256;aspnetcore</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../AiProxy.Mcp.Sdk/AiProxy.Mcp.Sdk.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AiProxy.Mcp.Sdk.AspNetCore.Tests" />
+  </ItemGroup>
+
+</Project>

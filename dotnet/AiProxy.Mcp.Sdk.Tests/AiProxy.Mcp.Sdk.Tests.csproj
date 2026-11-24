@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Runs against the net8.0 build by default; -p:SdkTargetFramework=netstandard2.0 tests the
+       netstandard2.0 build (the one .NET Framework, Mono and Unity consumers get). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <SdkTargetFramework Condition="'$(SdkTargetFramework)' == ''">net8.0</SdkTargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <!-- What a netstandard2.0 consumer receives transitively (SetTargetFramework does not flow it). -->
+  <ItemGroup Condition="'$(SdkTargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <ProjectReference Include="../AiProxy.Mcp.Sdk/AiProxy.Mcp.Sdk.csproj" SetTargetFramework="TargetFramework=$(SdkTargetFramework)" />
+  </ItemGroup>
+
+</Project>

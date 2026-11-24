@@ -1,0 +1,89 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Test (net8.0 build)
+        run: dotnet test aiproxy-mcp-sdk.slnx -c Release
+      - name: Test (netstandard2.0 build)
+        run: dotnet test dotnet/AiProxy.Mcp.Sdk.Tests -c Release -p:SdkTargetFramework=netstandard2.0
+      - run: dotnet pack aiproxy-mcp-sdk.slnx -c Release -o nupkgs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-packages
+          path: nupkgs/
+          retention-days: 7
+          if-no-files-found: error
+
+  dotnet-framework:
+    needs: dotnet
+    runs-on: windows-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/download-artifact@v4
+        with:
+          name: dotnet-packages
+          path: nupkgs/
+      - name: Build and run a .NET Framework 4.7.2 package consumer
+        shell: pwsh
+        run: |
+          $version = (Get-Content VERSION -Raw).Trim()
+          $config = Join-Path $env:RUNNER_TEMP 'consumer-nuget.config'
+          @"
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="local" value="$PWD\nupkgs" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+            </packageSources>
+          </configuration>
+          "@ | Set-Content -Path $config
+          dotnet restore dotnet/compatibility/FrameworkConsumer.csproj --configfile $config -p:SdkPackageVersion=$version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build dotnet/compatibility/FrameworkConsumer.csproj -c Release --no-restore -p:SdkPackageVersion=$version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & dotnet/compatibility/bin/Release/net472/FrameworkConsumer.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  license:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: License files match the root LICENSE
+        run: diff -q LICENSE rust/LICENSE
+
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo test --workspace
+      - run: cargo clippy --workspace -- -D warnings
+      - run: cargo publish -p aiproxy-mcp-sdk --dry-run

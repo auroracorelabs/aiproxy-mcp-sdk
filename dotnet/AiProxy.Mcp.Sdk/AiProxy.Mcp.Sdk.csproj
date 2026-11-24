@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- netstandard2.0: .NET Framework 4.6.1+, Mono, Unity, every .NET Core / .NET. net8.0: no extra
+       dependencies, trimming / Native AOT annotations. -->
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>AiProxy.Mcp.Sdk</PackageId>
+    <Description>MCP SDK: message_signed transport authentication — ES256 request signer for clients and verifier for servers (signed caller: username, groups, roles). netstandard2.0 and net8.0. ASP.NET Core middleware: AiProxy.Mcp.Sdk.AspNetCore.</Description>
+    <PackageTags>mcp;modelcontextprotocol;jws;es256;netstandard</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="8.0.1" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AiProxy.Mcp.Sdk.Tests" />
+  </ItemGroup>
+
+</Project>

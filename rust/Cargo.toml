@@ -1,0 +1,32 @@
+[package]
+name = "aiproxy-mcp-sdk"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Native (C ABI) SDK for MCP server plugins: typed descriptor/tool/result shapes, verified caller context, and the export_mcp_plugin! macro."
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/auroracorelabs/aiproxy-mcp-sdk"
+authors = ["Aurora"]
+keywords = ["mcp", "plugin", "ffi", "sdk"]
+categories = ["development-tools::ffi", "api-bindings"]
+include = ["src/**", "Cargo.toml", "README.md", "LICENSE", "Cargo.lock"]
+
+# rlib: plugin crates depend on this at compile time (they statically link it into their own
+# cdylib). cdylib: also emit libaiproxy_mcp_sdk.so as a shippable reference artifact.
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+# Only used by tests/journal_logging.rs to redirect the real stderr fd (dup2) so the
+# export_mcp_plugin!-generated auto-logging can be captured and asserted on — never shipped in a
+# plugin's compiled .so.
+libc = "0.2"
+
+# Release: no debug artifacts in shipped .so.
+[profile.release]
+strip = true
