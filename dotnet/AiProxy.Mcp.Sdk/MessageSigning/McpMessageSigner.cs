@@ -98,22 +98,43 @@ public sealed class McpSigningKey : IDisposable
             Directory.CreateDirectory(dir);
 
         var tmp = path + ".tmp";
-        using (var stream = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
-        {
-#if NET7_0_OR_GREATER
-            if (!isWindows)
-                File.SetUnixFileMode(tmp, UnixFileMode.UserRead | UnixFileMode.UserWrite);
-#endif
-            var pem = Encoding.ASCII.GetBytes(P256KeyEncoding.ExportPkcs8PrivateKeyPem(created.Key));
+        var pem = Encoding.ASCII.GetBytes(P256KeyEncoding.ExportPkcs8PrivateKeyPem(created.Key));
+        using (var stream = OpenPrivateKeyWriteStream(tmp, isWindows))
             stream.Write(pem, 0, pem.Length);
-        }
 
         File.Move(tmp, path);
         return created;
     }
 
-    private static string ComputeKeyId(ECDsa key) =>
-        Base64UrlCodec.Encode(Sha256.Hash(P256KeyEncoding.ExportSubjectPublicKeyInfo(key))).Substring(0, 16);
+#if NET7_0_OR_GREATER
+    private static FileStream OpenPrivateKeyWriteStream(string path, bool isWindows)
+    {
+        if (!isWindows
+            && (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || OperatingSystem.IsFreeBSD()))
+        {
+            return new FileStream(path, new FileStreamOptions
+            {
+                Mode = FileMode.Create,
+                Access = FileAccess.Write,
+                Share = FileShare.None,
+                // Mode 0600 at create — no window where the private key is group/world readable.
+                UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite,
+            });
+        }
+
+        return new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+    }
+#else
+    private static FileStream OpenPrivateKeyWriteStream(string path, bool _) =>
+        new(path, FileMode.Create, FileAccess.Write, FileShare.None);
+#endif
+
+    /// <summary>First 16 characters of base64url(SHA-256(SPKI DER)) — the wire <c>kid</c> and the required trusted-signers file stem.</summary>
+    public static string ComputeKeyId(ECDsa key)
+    {
+        Guard.NotNull(key, nameof(key));
+        return Base64UrlCodec.Encode(Sha256.Hash(P256KeyEncoding.ExportSubjectPublicKeyInfo(key))).Substring(0, 16);
+    }
 
     public void Dispose() => Key.Dispose();
 }
@@ -125,15 +146,24 @@ public sealed class McpSigningKey : IDisposable
 public sealed class McpMessageSigner
 {
     public const string HeaderName = "Mcp-Message-Signature";
+    /// <summary>Default <c>iss</c> for AiProxy as the signing client.</summary>
+    public const string DefaultIssuer = "aiproxy";
     public static readonly TimeSpan Lifetime = TimeSpan.FromSeconds(60);
 
     private readonly McpSigningKey _key;
+    private readonly string _issuer;
     private readonly TimeProvider _time;
     private readonly string _encodedHeader;
 
     public McpMessageSigner(McpSigningKey key, TimeProvider? time = null)
+        : this(key, DefaultIssuer, time)
+    {
+    }
+
+    public McpMessageSigner(McpSigningKey key, string issuer, TimeProvider? time = null)
     {
         _key = Guard.NotNull(key, nameof(key));
+        _issuer = Guard.NotNullOrWhiteSpace(issuer, nameof(issuer));
         _time = time ?? TimeProvider.System;
         _encodedHeader = Base64UrlCodec.Encode(WriteJson(w =>
         {
@@ -144,6 +174,8 @@ public sealed class McpMessageSigner
     }
 
     public string KeyId => _key.KeyId;
+
+    public string Issuer => _issuer;
 
     public string Sign(
         string method,
@@ -161,7 +193,7 @@ public sealed class McpMessageSigner
         var payload = Base64UrlCodec.Encode(WriteJson(w =>
         {
             w.WriteNumber("v", 1);
-            w.WriteString("iss", "aiproxy");
+            w.WriteString("iss", _issuer);
             w.WriteString("aud", audience);
             w.WriteNumber("iat", now);
             w.WriteNumber("exp", now + (long)Lifetime.TotalSeconds);

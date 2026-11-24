@@ -134,6 +134,13 @@ public sealed class MessageSignatureVerifier
             if (!string.Equals(GetString(p, "aud"), _options.Audience, StringComparison.Ordinal))
                 return MessageSignatureResult.Fail("audience mismatch");
 
+            var iss = GetString(p, "iss");
+            if (iss is null || iss.Length == 0)
+                return MessageSignatureResult.Fail("missing iss");
+            if (_options.ExpectedIssuer is not null
+                && !string.Equals(iss, _options.ExpectedIssuer, StringComparison.Ordinal))
+                return MessageSignatureResult.Fail("issuer mismatch");
+
             if (!TryGetLong(p, "iat", out var iat) || !TryGetLong(p, "exp", out var exp))
                 return MessageSignatureResult.Fail("missing iat/exp");
             var now = _time.GetUtcNow().ToUnixTimeSeconds();

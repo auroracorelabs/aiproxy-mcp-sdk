@@ -26,11 +26,16 @@ internal sealed class MessageSigningTestKit : IDisposable
 
     public ManualTimeProvider Time { get; }
 
-    public MessageSignatureOptions Options(MessageSignatureMode mode = MessageSignatureMode.Required) =>
-        new(mode, Audience, new Dictionary<string, ECDsa> { [Kid] = PublicKey });
+    public MessageSignatureOptions Options(
+        MessageSignatureMode mode = MessageSignatureMode.Required,
+        string? expectedIssuer = null) =>
+        new(mode, Audience, new Dictionary<string, ECDsa> { [Kid] = PublicKey }, expectedIssuer);
 
-    public MessageSignatureVerifier Verifier(MessageSignatureMode mode = MessageSignatureMode.Required, JtiReplayCache? cache = null) =>
-        new(Options(mode), cache ?? new JtiReplayCache(), Time);
+    public MessageSignatureVerifier Verifier(
+        MessageSignatureMode mode = MessageSignatureMode.Required,
+        JtiReplayCache? cache = null,
+        string? expectedIssuer = null) =>
+        new(Options(mode, expectedIssuer), cache ?? new JtiReplayCache(), Time);
 
     public string Sign(
         string method,
@@ -54,6 +59,7 @@ internal sealed class MessageSigningTestKit : IDisposable
             ["htp"] = path,
             ["bh"] = Base64Url.EncodeToString(SHA256.HashData(body)),
             ["sub"] = "6f1c2a1e-0000-4000-8000-000000000001",
+            ["username"] = "mrossi",
             ["name"] = "Mario Rossi",
             ["email"] = "mario@example.test",
             ["groups"] = new[] { "Sales", "Wiki editors" },

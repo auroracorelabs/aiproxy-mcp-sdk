@@ -5,7 +5,12 @@ namespace AiProxy.Mcp.Sdk.MessageSigning;
 
 /// <summary>
 /// Remembers accepted <c>jti</c> values until they can no longer pass the time checks, so a captured
-/// signed request cannot be replayed. One worker process per instance, so in-memory is sufficient.
+/// signed request cannot be replayed within this process.
+/// <para>
+/// <b>Single process only.</b> The cache is in-memory and is not shared across hosts, containers, or
+/// worker processes. Do not run more than one verifying process for the same MCP audience without an
+/// external shared replay store — otherwise a captured request can be replayed on another replica.
+/// </para>
 /// </summary>
 public sealed class JtiReplayCache
 {

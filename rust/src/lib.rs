@@ -202,9 +202,11 @@ pub struct CallContext {
 }
 
 impl CallContext {
-    /// True when the request carries a verified user.
+    /// True when the request carries a verified user (`user_id` and/or `username`).
+    /// Authorization on the MCP side still keys off [`CallContext::username`].
     pub fn has_user(&self) -> bool {
         self.user_id.as_deref().is_some_and(|u| !u.is_empty())
+            || self.username.as_deref().is_some_and(|u| !u.is_empty())
     }
 
     pub fn in_group(&self, group: &str) -> bool {
@@ -231,6 +233,10 @@ pub trait McpPlugin: Send + Sync + 'static {
     /// Dispatch one `tools/call` with the verified caller (`mcp_plugin_call_tool_ctx`). Every
     /// generated export routes through this method; the default ignores the context and calls
     /// [`McpPlugin::call_tool`], so existing plugins behave exactly as before.
+    ///
+    /// Plugins that authorize from the caller **must** override this method (or set
+    /// [`McpPlugin::requires_user_context`] so the host refuses unsigned traffic). Relying on the
+    /// default drops `context` on the floor.
     fn call_tool_with_context(
         &self,
         name: &str,
@@ -540,6 +546,7 @@ mod tests {
         assert_eq!(ctx.request_id.as_deref(), Some("r"));
         assert!(!ffi::parse_context("{}").has_user());
         assert!(!ffi::parse_context(r#"{"userId":""}"#).has_user());
+        assert!(ffi::parse_context(r#"{"username":"mrossi"}"#).has_user());
         assert!(!ffi::parse_context("garbage").has_user());
     }
 

@@ -19,6 +19,7 @@ public sealed class MessageSignatureVerifierTests : IDisposable
         Assert.True(result.Success, result.Error);
         var id = result.Identity!;
         Assert.Equal("6f1c2a1e-0000-4000-8000-000000000001", id.UserId);
+        Assert.Equal("mrossi", id.Username);
         Assert.Equal("Mario Rossi", id.Name);
         Assert.Equal(["Sales", "Wiki editors"], id.Groups);
         Assert.Equal(["user"], id.Roles);
@@ -66,6 +67,22 @@ public sealed class MessageSignatureVerifierTests : IDisposable
     {
         var token = _kit.Sign("POST", "/", Body, p => p["aud"] = "other-instance");
         Assert.Equal("audience mismatch", _kit.Verifier().Verify(token, "POST", "/", Body).Error);
+    }
+
+    [Fact]
+    public void Wrong_issuer_is_rejected_when_expected()
+    {
+        var token = _kit.Sign("POST", "/", Body, p => p["iss"] = "other-client");
+        Assert.Equal(
+            "issuer mismatch",
+            _kit.Verifier(expectedIssuer: McpMessageSigner.DefaultIssuer).Verify(token, "POST", "/", Body).Error);
+    }
+
+    [Fact]
+    public void Missing_issuer_is_rejected()
+    {
+        var token = _kit.Sign("POST", "/", Body, p => p.Remove("iss"));
+        Assert.Equal("missing iss", _kit.Verifier().Verify(token, "POST", "/", Body).Error);
     }
 
     [Fact]
@@ -165,6 +182,7 @@ public sealed class MessageSignatureVerifierTests : IDisposable
         var token = _kit.Sign("POST", "/", Body, p =>
         {
             p.Remove("sub");
+            p.Remove("username");
             p.Remove("name");
             p.Remove("email");
             p.Remove("groups");
@@ -175,6 +193,7 @@ public sealed class MessageSignatureVerifierTests : IDisposable
 
         Assert.True(result.Success, result.Error);
         Assert.Null(result.Identity!.UserId);
+        Assert.Null(result.Identity.Username);
         Assert.Equal(["service"], result.Identity.Roles);
     }
 

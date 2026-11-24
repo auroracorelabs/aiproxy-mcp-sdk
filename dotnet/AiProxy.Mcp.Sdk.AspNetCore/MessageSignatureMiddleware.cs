@@ -143,12 +143,13 @@ public static class MessageSignatureMiddleware
         if (status == StatusCodes.Status401Unauthorized)
             context.Response.Headers.WWWAuthenticate = "MessageSigned";
 
+        // Client body stays generic so auth failure details are not an oracle; detail is in the log only.
+        var clientError = status == StatusCodes.Status413PayloadTooLarge ? "payload_too_large" : "unauthorized";
         using var ms = new MemoryStream();
         await using (var w = new Utf8JsonWriter(ms))
         {
             w.WriteStartObject();
-            w.WriteString("error", "unauthorized");
-            w.WriteString("reason", reason);
+            w.WriteString("error", clientError);
             w.WriteEndObject();
         }
 

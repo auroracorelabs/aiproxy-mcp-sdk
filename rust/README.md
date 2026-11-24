@@ -13,6 +13,10 @@ aiproxy-mcp-sdk = "1"
 ```
 
 Identity in `CallContext` comes only from a request signature the host has verified
-(`message_signed`); never derive it from tool arguments.
+(`message_signed`); never derive it from tool arguments. `CallContext::has_user` is true when
+`user_id` and/or `username` is present; MCP-side authorization still keys off `username`.
+
+Override `call_tool_with_context` (or set `requires_user_context`) when the plugin must see the
+caller — the default implementation ignores context and calls `call_tool`.
 
 License: MIT.

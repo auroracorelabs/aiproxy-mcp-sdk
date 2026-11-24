@@ -80,6 +80,7 @@ public sealed class LoadRequiredOrInitializeTests
 
             Assert.True(Directory.Exists(path));
             Assert.Equal(MessageSignatureMode.Required, options.Mode);
+            Assert.Equal(McpMessageSigner.DefaultIssuer, options.ExpectedIssuer);
             Assert.Empty(options.TrustedKeys);
             using var key = McpSigningKey.Generate();
             var token = new McpMessageSigner(key).Sign("POST", "/mcp", [], "example-mcp", McpCallerIdentity.Service);

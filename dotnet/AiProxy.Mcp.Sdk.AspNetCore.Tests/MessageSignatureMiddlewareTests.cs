@@ -66,6 +66,7 @@ public sealed class MessageSignatureMiddlewareTests : IDisposable
         Assert.False(next);
         Assert.Equal(StatusCodes.Status401Unauthorized, ctx.Response.StatusCode);
         Assert.Equal("MessageSigned", ctx.Response.Headers.WWWAuthenticate.ToString());
+        Assert.Equal("""{"error":"unauthorized"}""", Encoding.UTF8.GetString(((MemoryStream)ctx.Response.Body).ToArray()));
     }
 
     [Fact]
@@ -76,6 +77,8 @@ public sealed class MessageSignatureMiddlewareTests : IDisposable
 
         Assert.False(next);
         Assert.Equal(StatusCodes.Status401Unauthorized, ctx.Response.StatusCode);
+        // Failure detail stays in logs only — body must not name body-hash / audience / etc.
+        Assert.Equal("""{"error":"unauthorized"}""", Encoding.UTF8.GetString(((MemoryStream)ctx.Response.Body).ToArray()));
     }
 
     [Fact]

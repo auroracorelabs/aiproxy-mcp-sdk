@@ -25,15 +25,21 @@ public sealed class MessageSignatureOptions
     public const string DefaultTrustedSignersPath = "/etc/mcp/trusted-signers";
     public const string ModeDirective = "MessageSignature";
     public const string AudienceDirective = "MessageSignatureAudience";
+    public const string IssuerDirective = "MessageSignatureIssuer";
     public const string TrustedSignersPathDirective = "TrustedSignersPath";
 
     public static MessageSignatureOptions Disabled { get; } = new(MessageSignatureMode.Off, "", new Dictionary<string, ECDsa>());
 
-    public MessageSignatureOptions(MessageSignatureMode mode, string audience, IReadOnlyDictionary<string, ECDsa> trustedKeys)
+    public MessageSignatureOptions(
+        MessageSignatureMode mode,
+        string audience,
+        IReadOnlyDictionary<string, ECDsa> trustedKeys,
+        string? expectedIssuer = null)
     {
         Mode = mode;
         Audience = Guard.NotNull(audience, nameof(audience));
         TrustedKeys = Guard.NotNull(trustedKeys, nameof(trustedKeys));
+        ExpectedIssuer = string.IsNullOrWhiteSpace(expectedIssuer) ? null : expectedIssuer!.Trim();
     }
 
     public MessageSignatureMode Mode { get; }
@@ -41,7 +47,13 @@ public sealed class MessageSignatureOptions
     /// <summary>Expected <c>aud</c> claim; published as <c>transportAuth.audience</c>.</summary>
     public string Audience { get; }
 
-    /// <summary>Public keys by <c>kid</c> (file name without <c>.pem</c>).</summary>
+    /// <summary>
+    /// When set, the payload <c>iss</c> must equal this value (typical AiProxy client:
+    /// <see cref="McpMessageSigner.DefaultIssuer"/>). When null, any non-empty <c>iss</c> is accepted.
+    /// </summary>
+    public string? ExpectedIssuer { get; }
+
+    /// <summary>Public keys by <c>kid</c> (file name without <c>.pem</c>, must equal <see cref="McpSigningKey.ComputeKeyId"/>).</summary>
     public IReadOnlyDictionary<string, ECDsa> TrustedKeys { get; }
 
     public bool Enabled => Mode != MessageSignatureMode.Off;
@@ -62,11 +74,17 @@ public sealed class MessageSignatureOptions
     }
 
     /// <summary>
-    /// Resolves the <c>MessageSignature</c>, <c>MessageSignatureAudience</c> and
-    /// <c>TrustedSignersPath</c> directive values. <paramref name="defaultAudience"/> applies when
-    /// the audience directive is empty. Throws when the mode is not off and no key is found.
+    /// Resolves the <c>MessageSignature</c>, <c>MessageSignatureAudience</c>,
+    /// <c>MessageSignatureIssuer</c> and <c>TrustedSignersPath</c> directive values.
+    /// <paramref name="defaultAudience"/> applies when the audience directive is empty.
+    /// Throws when the mode is not off and no key is found.
     /// </summary>
-    public static MessageSignatureOptions Load(string? mode, string? audience, string? trustedSignersPath, string? defaultAudience = null)
+    public static MessageSignatureOptions Load(
+        string? mode,
+        string? audience,
+        string? trustedSignersPath,
+        string? defaultAudience = null,
+        string? expectedIssuer = null)
     {
         var parsedMode = ParseMode(mode);
         if (parsedMode == MessageSignatureMode.Off)
@@ -83,7 +101,7 @@ public sealed class MessageSignatureOptions
                 $"{ModeDirective} is {parsedMode.ToString().ToLowerInvariant()} but no trusted signer key (<kid>.pem) was found in '{path}'.");
         }
 
-        return new MessageSignatureOptions(parsedMode, resolvedAudience, keys);
+        return new MessageSignatureOptions(parsedMode, resolvedAudience, keys, FirstNonBlank(expectedIssuer, null));
     }
 
     /// <summary>
@@ -91,16 +109,27 @@ public sealed class MessageSignatureOptions
     /// <paramref name="trustedSignersPath"/> when missing (first start) and, when it holds no key yet,
     /// returns options that reject every request (fail closed) instead of failing startup. Check
     /// <see cref="TrustedKeys"/> to warn the operator. Keys are read once: restart after adding one.
+    /// Defaults <see cref="ExpectedIssuer"/> to <see cref="McpMessageSigner.DefaultIssuer"/>.
     /// </summary>
-    public static MessageSignatureOptions LoadRequiredOrInitialize(string audience, string? trustedSignersPath)
+    public static MessageSignatureOptions LoadRequiredOrInitialize(
+        string audience,
+        string? trustedSignersPath,
+        string? expectedIssuer = McpMessageSigner.DefaultIssuer)
     {
         Guard.NotNullOrWhiteSpace(audience, nameof(audience));
         var path = FirstNonBlank(trustedSignersPath, DefaultTrustedSignersPath)!;
         Directory.CreateDirectory(path);
-        return new MessageSignatureOptions(MessageSignatureMode.Required, audience.Trim(), LoadTrustedKeys(path));
+        return new MessageSignatureOptions(
+            MessageSignatureMode.Required,
+            audience.Trim(),
+            LoadTrustedKeys(path),
+            expectedIssuer);
     }
 
-    /// <summary>Loads every <c>&lt;kid&gt;.pem</c> (SPKI <c>PUBLIC KEY</c>, P-256) in <paramref name="directory"/>.</summary>
+    /// <summary>
+    /// Loads every <c>&lt;kid&gt;.pem</c> (SPKI <c>PUBLIC KEY</c>, P-256) in <paramref name="directory"/>.
+    /// The file stem must equal <see cref="McpSigningKey.ComputeKeyId"/> of the key material.
+    /// </summary>
     public static IReadOnlyDictionary<string, ECDsa> LoadTrustedKeys(string directory)
     {
         Guard.NotNull(directory, nameof(directory));
@@ -125,6 +154,14 @@ public sealed class MessageSignatureOptions
             {
                 key.Dispose();
                 throw new InvalidOperationException($"Trusted signer key '{file}' must be an ECDSA P-256 key.");
+            }
+
+            var computed = McpSigningKey.ComputeKeyId(key);
+            if (!string.Equals(kid, computed, StringComparison.Ordinal))
+            {
+                key.Dispose();
+                throw new InvalidOperationException(
+                    $"Trusted signer key '{file}' must be named '{computed}.pem' (base64url SHA-256 of the SPKI, first 16 characters), not '{kid}.pem'.");
             }
 
             keys[kid] = key;

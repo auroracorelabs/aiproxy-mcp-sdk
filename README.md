@@ -12,9 +12,10 @@ The single SDK for MCP servers and their clients: everything needed to **build**
 ## message_signed in one paragraph
 
 The client signs every HTTP request with its ES256 key (`Mcp-Message-Signature`, compact JWS bound to
-method, path, body hash, audience and a single-use `jti`) and asserts the acting user: `sub`,
+method, path, body hash, audience, issuer and a single-use `jti`) and asserts the acting user: `sub`,
 `username`, `name`, `email`, `groups`, `roles`. The server trusts only public keys in its
-trusted-signers directory (`<kid>.pem`) and applies **its own** permissions to `username`. Wire
+trusted-signers directory (`<kid>.pem`, stem = SPKI hash prefix) and applies **its own** permissions
+to `username`. Replay protection is **per process** — one verifying host per audience. Wire
 format: [docs/MESSAGE_SIGNED.md](docs/MESSAGE_SIGNED.md).
 
 ```csharp

@@ -23,12 +23,31 @@ public sealed class MessageSignatureOptionsTests : IDisposable
         var dir = Directory.CreateTempSubdirectory("trusted-signers-");
         try
         {
-            File.WriteAllText(Path.Combine(dir.FullName, "k1.pem"), _kit.PublicKey.ExportSubjectPublicKeyInfoPem());
-            var options = MessageSignatureOptions.Load("required", null, dir.FullName, "example-01");
+            var kid = McpSigningKey.ComputeKeyId(_kit.PublicKey);
+            File.WriteAllText(Path.Combine(dir.FullName, kid + ".pem"), _kit.PublicKey.ExportSubjectPublicKeyInfoPem());
+            var options = MessageSignatureOptions.Load("required", null, dir.FullName, "example-01", McpMessageSigner.DefaultIssuer);
 
             Assert.Equal(MessageSignatureMode.Required, options.Mode);
             Assert.Equal("example-01", options.Audience);
-            Assert.Equal(["k1"], options.TrustedKeys.Keys);
+            Assert.Equal(McpMessageSigner.DefaultIssuer, options.ExpectedIssuer);
+            Assert.Equal([kid], options.TrustedKeys.Keys);
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Options_reject_trusted_key_file_whose_stem_is_not_the_key_id()
+    {
+        var dir = Directory.CreateTempSubdirectory("trusted-signers-");
+        try
+        {
+            File.WriteAllText(Path.Combine(dir.FullName, "wrong-name.pem"), _kit.PublicKey.ExportSubjectPublicKeyInfoPem());
+
+            var ex = Assert.Throws<InvalidOperationException>(() => MessageSignatureOptions.LoadTrustedKeys(dir.FullName));
+            Assert.Contains(McpSigningKey.ComputeKeyId(_kit.PublicKey) + ".pem", ex.Message);
         }
         finally
         {
