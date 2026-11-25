@@ -7,3 +7,4 @@ dist/
 build/
 docs/site/node_modules/
 docs/site/.venv/
+scratch/
