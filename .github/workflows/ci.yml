@@ -24,7 +24,7 @@ jobs:
       - name: Test (netstandard2.0 build)
         run: dotnet test dotnet/AiProxy.Mcp.Sdk.Tests -c Release -p:SdkTargetFramework=netstandard2.0
       - run: dotnet pack aiproxy-mcp-sdk.slnx -c Release -o nupkgs
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: dotnet-packages
           path: nupkgs/
