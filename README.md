@@ -32,6 +32,12 @@ app.UseMessageSignature("/mcp");   // HttpContext.User = signed caller, claim "u
   (ASP.NET Core servers).
 - Rust: `aiproxy-mcp-sdk = "1"`.
 
+## MCP identity vs connection manifest
+
+Catalogue branding (`title` / `description` / `icons`) belongs on MCP `initialize`. AiProxy setup
+(`auth`, inject, …) stays on `/.well-known/mcp-connection.json`. Field matrix:
+[docs/MCP_IDENTITY.md](docs/MCP_IDENTITY.md).
+
 ## Documentation
 
 Guides and generated .NET / Rust API references are built by the

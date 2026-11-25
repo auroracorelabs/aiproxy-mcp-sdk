@@ -22,4 +22,8 @@ caller — the default implementation ignores context and calls `call_tool`.
 Per-caller tool accessibility on `tools/list` uses `_meta.accessible` (`TOOL_ACCESS_META_KEY`);
 see `docs/MESSAGE_SIGNED.md`.
 
+**Branding** (`title`, `description`, `icons`) belongs on `PluginDescriptor` / MCP `initialize`,
+not on the connection manifest. Use `icon_svg_to_mcp_icons` for SVG. Setup auth / inject stay on
+`connection`. Field matrix: `docs/MCP_IDENTITY.md`.
+
 License: MIT.

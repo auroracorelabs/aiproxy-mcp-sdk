@@ -13,7 +13,15 @@ client signs.
 builder.Services.AddMessageSignature(
     MessageSignatureOptions.LoadRequiredOrInitialize("my-mcp", "data/trusted-signers"));
 app.UseMessageSignature("/mcp");   // only /mcp is verified; other routes are untouched
+app.MapMcpConnectionManifest(new McpConnectionManifestDocument
+{
+    Identity = new() { Id = "my-mcp", DisplayName = "My MCP" },
+    Auth = new() { Kind = "none" },
+}); // stamps transportAuth from MessageSignatureOptions when enabled
 app.MapMcp("/mcp");
 ```
+
+Catalogue branding (`Implementation.title` / `description` / `icons`) belongs on MCP `initialize`,
+not on the connection manifest — see `docs/MCP_IDENTITY.md` and `McpIconHelper`.
 
 License: MIT.

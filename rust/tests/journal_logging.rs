@@ -30,6 +30,9 @@ impl McpPlugin for TestPlugin {
         PluginDescriptor {
             server_name: "journal-logging-fixture".into(),
             server_version: "0.0.0".into(),
+            title: None,
+            description: None,
+            icons: None,
             instructions: String::new(),
             config_parameters: vec![],
             connection: None,

@@ -2,6 +2,16 @@
 
 ## 1.0.2 — 2026-11-25
 
+- **MCP wire identity on the plugin descriptor.** Rust `PluginDescriptor` gains `title`,
+  `description`, and `icons` (MCP `Implementation` on `initialize`). Helper
+  `icon_svg_to_mcp_icons` builds a data-URI icon from inline SVG. `plugin_metadata_json` derives
+  `plugin.json` fields so authors do not invent a second description.
+  `PluginDescriptor::unify_instance_config` (also applied in `export_mcp_plugin!`) copies
+  `configParameters` into `connection.instanceConfig` when empty.
+- **Breaking (ABI):** `connection.identity.iconSvg` removed — branding is MCP `icons` only. Field
+  matrix: `docs/MCP_IDENTITY.md`.
+- **.NET:** typed connection-manifest models, `McpIconHelper`, and
+  `MapMcpConnectionManifest` for non-plugin HTTP MCP hosts (e.g. Compass).
 - **SDK documentation site.** Custom static site under `docs/site/`: guides from package READMEs and
   `docs/MESSAGE_SIGNED.md`, DocFX + rustdoc API references, GitHub Pages workflow
   (`.github/workflows/docs.yml`). Local preview on port 8092. Setup and known gaps (Pages

@@ -72,15 +72,13 @@ pub struct ConnectionManifest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ConnectionIdentity {
     pub id: String,
+    /// Setup / wizard name hint. Catalogue branding uses MCP `Implementation.title` on the descriptor.
     #[serde(rename = "displayName")]
     pub display_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub portable: Option<bool>,
     #[serde(rename = "integrationType", skip_serializing_if = "Option::is_none")]
     pub integration_type: Option<String>,
-    /// Optional inline SVG markup for AiProxy wizard / catalogue branding.
-    #[serde(rename = "iconSvg", skip_serializing_if = "Option::is_none")]
-    pub icon_svg: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -127,18 +125,115 @@ pub struct ToolDescriptor {
     pub input_schema: Value,
 }
 
+/// MCP `Icon` wire shape (`Implementation.icons[]` on initialize). Prefer
+/// [`icon_svg_to_mcp_icons`] for inline SVG branding.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct McpIcon {
+    pub src: String,
+    #[serde(rename = "mimeType", skip_serializing_if = "Option::is_none")]
+    pub mime_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sizes: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub theme: Option<String>,
+}
+
+/// Convert inline SVG markup to a single MCP icon with a percent-encoded
+/// `data:image/svg+xml,...` `src`. Returns `None` when `svg` is blank.
+pub fn icon_svg_to_mcp_icons(svg: impl AsRef<str>) -> Option<Vec<McpIcon>> {
+    let trimmed = svg.as_ref().trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    Some(vec![McpIcon {
+        src: format!("data:image/svg+xml,{}", percent_encode_utf8(trimmed)),
+        mime_type: Some("image/svg+xml".into()),
+        sizes: Some(vec!["any".into()]),
+        theme: None,
+    }])
+}
+
+fn percent_encode_utf8(input: &str) -> String {
+    let mut out = String::with_capacity(input.len() * 3);
+    for byte in input.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(byte as char)
+            }
+            _ => out.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    out
+}
+
+/// `plugin.json` catalogue metadata (name / description / version / library) derived from a
+/// descriptor so authors do not invent a second description string.
+pub fn plugin_metadata_json(descriptor: &PluginDescriptor, library: impl Into<String>) -> Value {
+    let description = descriptor
+        .description
+        .as_deref()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or(descriptor.instructions.as_str());
+    let name = descriptor
+        .title
+        .as_deref()
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| {
+            descriptor
+                .connection
+                .as_ref()
+                .and_then(|c| c.identity.as_ref())
+                .map(|i| i.display_name.as_str())
+        })
+        .unwrap_or(descriptor.server_name.as_str());
+    serde_json::json!({
+        "name": name,
+        "description": description,
+        "version": descriptor.server_version,
+        "library": library.into(),
+    })
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PluginDescriptor {
     #[serde(rename = "serverName")]
     pub server_name: String,
     #[serde(rename = "serverVersion")]
     pub server_version: String,
+    /// MCP `Implementation.title` (UI display name).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// MCP `Implementation.description` (human catalogue / purpose).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// MCP `Implementation.icons` (use [`icon_svg_to_mcp_icons`] for SVG).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub icons: Option<Vec<McpIcon>>,
     pub instructions: String,
     #[serde(rename = "configParameters")]
     pub config_parameters: Vec<ConfigParameter>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub connection: Option<ConnectionManifest>,
     pub tools: Vec<ToolDescriptor>,
+}
+
+impl PluginDescriptor {
+    /// Copy `config_parameters` into `connection.instanceConfig` when the latter is empty, so the
+    /// AiProxy wizard and host `.conf` share one schema.
+    pub fn unify_instance_config(mut self) -> Self {
+        let params = self.config_parameters.clone();
+        if let Some(connection) = self.connection.as_mut() {
+            let empty = connection
+                .instance_config
+                .as_ref()
+                .map(|c| c.is_empty())
+                .unwrap_or(true);
+            if empty && !params.is_empty() {
+                connection.instance_config = Some(params);
+            }
+        }
+        self
+    }
 }
 
 /// Mirrors MCP's `CallToolResult` JSON shape (`ModelContextProtocol.Protocol.CallToolResult` on
@@ -322,7 +417,7 @@ macro_rules! export_mcp_plugin {
         #[no_mangle]
         pub extern "C" fn mcp_plugin_descriptor() -> *mut ::std::os::raw::c_char {
             let plugin = __mcp_plugin_instance();
-            let descriptor = $crate::McpPlugin::descriptor(plugin);
+            let descriptor = $crate::McpPlugin::descriptor(plugin).unify_instance_config();
             let mut value = ::serde_json::to_value(&descriptor).unwrap_or(::serde_json::Value::Null);
             if $crate::McpPlugin::requires_user_context(plugin) {
                 if let Some(obj) = value.as_object_mut() {
@@ -471,6 +566,9 @@ mod tests {
         let descriptor = PluginDescriptor {
             server_name: "fixture".into(),
             server_version: "1.0.0".into(),
+            title: Some("Fixture".into()),
+            description: Some("Fixture MCP for ABI tests".into()),
+            icons: icon_svg_to_mcp_icons("<svg xmlns=\"http://www.w3.org/2000/svg\"/>"),
             instructions: String::new(),
             config_parameters: vec![ConfigParameter::new("BaseUrl", false, "string")],
             connection: Some(ConnectionManifest {
@@ -480,7 +578,6 @@ mod tests {
                     display_name: "Fixture".into(),
                     portable: Some(false),
                     integration_type: None,
-                    icon_svg: None,
                 }),
                 auth: Some(ConnectionAuth {
                     kind: "instance_config".into(),
@@ -496,7 +593,8 @@ mod tests {
                 description: "d".into(),
                 input_schema: serde_json::json!({ "type": "object" }),
             }],
-        };
+        }
+        .unify_instance_config();
 
         let json = serde_json::to_value(&descriptor).unwrap();
         assert!(json.get("serverName").is_some());
@@ -506,6 +604,18 @@ mod tests {
         assert_eq!(json["connection"]["connectionSchemaVersion"], 1);
         assert_eq!(json["tools"][0].get("inputSchema").unwrap()["type"], "object");
         assert!(json["configParameters"][0].get("type").is_some());
+        assert!(json["icons"].as_array().unwrap()[0]["src"]
+            .as_str()
+            .unwrap()
+            .starts_with("data:image/svg+xml,"));
+        assert_eq!(
+            json["connection"]["instanceConfig"][0]["name"],
+            "BaseUrl"
+        );
+        let meta = plugin_metadata_json(&descriptor, "Fixture.so");
+        assert_eq!(meta["name"], "Fixture");
+        assert_eq!(meta["description"], "Fixture MCP for ABI tests");
+        assert_eq!(meta["library"], "Fixture.so");
     }
 
     struct LegacyPlugin;
