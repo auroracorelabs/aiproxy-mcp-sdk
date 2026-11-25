@@ -236,6 +236,12 @@ impl PluginDescriptor {
     }
 }
 
+mod chart;
+
+pub use chart::{
+    ChartBar, ChartKind, ChartReferenceLine, ChartSeries, ChartSlice, ChartSpec, CHART_MIME_TYPE,
+};
+
 /// Mirrors MCP's `CallToolResult` JSON shape (`ModelContextProtocol.Protocol.CallToolResult` on
 /// the host side).
 #[derive(Serialize, Debug, Clone)]
@@ -245,18 +251,40 @@ pub struct CallToolResult {
     pub is_error: Option<bool>,
 }
 
+/// MCP content block. Plugins emit `text` and chart `resource` blocks; other MCP types are
+/// host-side only.
 #[derive(Serialize, Debug, Clone)]
-pub struct ContentBlock {
-    #[serde(rename = "type")]
-    pub kind: String,
+#[serde(tag = "type")]
+pub enum ContentBlock {
+    #[serde(rename = "text")]
+    Text { text: String },
+    #[serde(rename = "resource")]
+    Resource { resource: ResourceContents },
+}
+
+/// Embedded resource payload (MCP camelCase on the wire).
+#[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ResourceContents {
+    pub uri: String,
+    pub mime_type: String,
     pub text: String,
+}
+
+impl ContentBlock {
+    /// Text body when this is a text block.
+    pub fn as_text(&self) -> Option<&str> {
+        match self {
+            ContentBlock::Text { text } => Some(text.as_str()),
+            ContentBlock::Resource { .. } => None,
+        }
+    }
 }
 
 impl CallToolResult {
     pub fn text(text: impl Into<String>) -> Self {
         Self {
-            content: vec![ContentBlock {
-                kind: "text".to_string(),
+            content: vec![ContentBlock::Text {
                 text: text.into(),
             }],
             is_error: None,
@@ -265,13 +293,46 @@ impl CallToolResult {
 
     pub fn error(message: impl Into<String>) -> Self {
         Self {
-            content: vec![ContentBlock {
-                kind: "text".to_string(),
+            content: vec![ContentBlock::Text {
                 text: message.into(),
             }],
             is_error: Some(true),
         }
     }
+
+    /// Text summary for the LLM plus an embedded chart resource (`application/vnd.aiproxy.chart+json`).
+    ///
+    /// Fails when [`ChartSpec::validate`] rejects the payload.
+    pub fn chart(spec: ChartSpec, summary: impl Into<String>) -> Result<Self, String> {
+        let body = spec.to_json_string()?;
+        let id = next_chart_id();
+        Ok(Self {
+            content: vec![
+                ContentBlock::Text {
+                    text: summary.into(),
+                },
+                ContentBlock::Resource {
+                    resource: ResourceContents {
+                        uri: format!("aiproxy://chart/{id}"),
+                        mime_type: CHART_MIME_TYPE.to_string(),
+                        text: body,
+                    },
+                },
+            ],
+            is_error: None,
+        })
+    }
+}
+
+fn next_chart_id() -> String {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static COUNTER: AtomicU64 = AtomicU64::new(1);
+    let n = COUNTER.fetch_add(1, Ordering::Relaxed);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    format!("{nanos:x}-{n}")
 }
 
 pub type PluginResult<T> = Result<T, String>;
@@ -642,8 +703,12 @@ mod tests {
         };
         let plugin = LegacyPlugin;
         assert_eq!(
-            plugin.call_tool_with_context("t", Value::Null, &ctx).unwrap().content[0].text,
-            "t"
+            plugin
+                .call_tool_with_context("t", Value::Null, &ctx)
+                .unwrap()
+                .content[0]
+                .as_text(),
+            Some("t")
         );
         assert!(plugin.allowed_tools(&ctx).is_none());
         assert!(!plugin.requires_user_context());
@@ -674,5 +739,56 @@ mod tests {
 
         let err = serde_json::to_value(CallToolResult::error("boom")).unwrap();
         assert_eq!(err["isError"], true);
+    }
+
+    #[test]
+    fn call_tool_result_chart_emits_text_and_resource() {
+        let spec = ChartSpec::Bar {
+            title: Some("Tickets".into()),
+            aria_label: "Tickets by severity".into(),
+            bars: vec![
+                ChartBar {
+                    label: "Low".into(),
+                    value: 12.0,
+                },
+                ChartBar {
+                    label: "High".into(),
+                    value: 3.0,
+                },
+            ],
+            series_label: Some("Tickets".into()),
+        };
+        let result = CallToolResult::chart(spec, "12 low, 3 high.").unwrap();
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["content"][0]["type"], "text");
+        assert_eq!(json["content"][0]["text"], "12 low, 3 high.");
+        assert_eq!(json["content"][1]["type"], "resource");
+        assert_eq!(
+            json["content"][1]["resource"]["mimeType"],
+            CHART_MIME_TYPE
+        );
+        assert!(json["content"][1]["resource"]["uri"]
+            .as_str()
+            .unwrap()
+            .starts_with("aiproxy://chart/"));
+        let body: serde_json::Value =
+            serde_json::from_str(json["content"][1]["resource"]["text"].as_str().unwrap())
+                .unwrap();
+        assert_eq!(body["kind"], "bar");
+        assert_eq!(body["bars"][0]["label"], "Low");
+        assert!(json.get("isError").is_none());
+    }
+
+    #[test]
+    fn call_tool_result_chart_rejects_invalid_spec() {
+        let spec = ChartSpec::Line {
+            title: None,
+            aria_label: "x".into(),
+            labels: vec!["a".into()],
+            series: vec![],
+            reference_lines: None,
+            include_zero: None,
+        };
+        assert!(CallToolResult::chart(spec, "summary").is_err());
     }
 }

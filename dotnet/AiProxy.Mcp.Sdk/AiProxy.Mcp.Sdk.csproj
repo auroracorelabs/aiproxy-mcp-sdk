@@ -7,7 +7,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>AiProxy.Mcp.Sdk</PackageId>
-    <Description>MCP SDK: message_signed transport authentication (ES256 signer/verifier, signed caller claims) and per-caller tools/list accessibility (_meta.accessible via McpToolAccessMeta). netstandard2.0 and net8.0. ASP.NET Core middleware: AiProxy.Mcp.Sdk.AspNetCore.</Description>
+    <Description>MCP SDK: message_signed transport authentication (ES256 signer/verifier, signed caller claims), per-caller tools/list accessibility (_meta.accessible via McpToolAccessMeta), and declarative chart CallToolResult helpers (McpChartContent). netstandard2.0 and net8.0. ASP.NET Core middleware: AiProxy.Mcp.Sdk.AspNetCore.</Description>
     <PackageTags>mcp;modelcontextprotocol;jws;es256;netstandard</PackageTags>
   </PropertyGroup>
 

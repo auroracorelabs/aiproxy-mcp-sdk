@@ -13,6 +13,7 @@ test('all guides and generated language references are present',async()=>{
   'dotnet/index.html',
   'rust/index.html',
   'message-signed/index.html',
+  'charts/index.html',
   'releasing/index.html',
   'documentation/index.html',
   'reference/dotnet/index.html',
@@ -40,7 +41,7 @@ test('guide links, fragments and assets resolve under the GitHub Pages repositor
  }
 });
 test('search and AI discovery URLs use the configured project base',async()=>{
- const index=JSON.parse(await read('search.json'));assert.equal(index.length,7);
+ const index=JSON.parse(await read('search.json'));assert.equal(index.length,8);
  for(const p of index){assert.ok(p.url.startsWith(base));assert.ok(p.text.length);}
  const ai=await read('llms.txt');assert.ok(ai.includes('https://github.com/auroracorelabs/aiproxy-mcp-sdk'));
  for(const lang of ['dotnet','rust'])assert.ok(ai.includes(base+'reference/'+lang+'/'));
@@ -48,6 +49,7 @@ test('search and AI discovery URLs use the configured project base',async()=>{
  const sitemap=await read('sitemap.xml');
  assert.ok(sitemap.includes(base+'getting-started/'));
  assert.ok(sitemap.includes(base+'message-signed/'));
+ assert.ok(sitemap.includes(base+'charts/'));
 });
 test('.NET reference includes public signing types',async()=>{
  const listing=await walk(path.join(dist,'reference','dotnet'));

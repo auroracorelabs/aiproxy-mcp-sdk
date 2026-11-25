@@ -16,6 +16,9 @@ trimming and Native AOT compatible).
   `_meta.accessible` via `McpToolAccessMeta` (see [MESSAGE_SIGNED.md](../../docs/MESSAGE_SIGNED.md)).
 - **Connection manifest types** + `McpIconHelper` for SVG → MCP icon data URIs (branding on
   `initialize`, setup on the manifest — [MCP_IDENTITY.md](../../docs/MCP_IDENTITY.md)).
+- **Charts:** `McpChartContent.CreateToolResultJson` builds `CallToolResult` JSON with a text
+  summary and an embedded `application/vnd.aiproxy.chart+json` resource
+  ([CHARTS.md](../../docs/CHARTS.md)). Rendering is host-side (Aurora.AI `AuroraCharts`).
 
 ```csharp
 using var key = McpSigningKey.LoadOrCreate("mcp-signing-key.pem");

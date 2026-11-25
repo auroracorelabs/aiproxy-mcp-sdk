@@ -17,6 +17,7 @@ const entries=[
  ['dotnet/','dotnet/AiProxy.Mcp.Sdk/README.md','Language guides'],
  ['rust/','rust/README.md','Language guides'],
  ['message-signed/','docs/MESSAGE_SIGNED.md','Reference'],
+ ['charts/','docs/CHARTS.md','Reference'],
  ['releasing/','docs/RELEASING.md','Contributing'],
  ['documentation/','docs/PAGES.md','Contributing'],
 ];
@@ -29,7 +30,8 @@ dotnetPage.text=dotnetPage.text.trimEnd()+'\n\n## ASP.NET Core middleware\n\n'+(
 const navigationTitles: Record<string,string>={
  '':'Overview','getting-started/':'Getting started',
  'dotnet/':'.NET','rust/':'Rust',
- 'message-signed/':'message_signed contract','releasing/':'Build and release','documentation/':'Documentation maintenance',
+ 'message-signed/':'message_signed contract','charts/':'Charts',
+ 'releasing/':'Build and release','documentation/':'Documentation maintenance',
 };
 for(const p of pages)p.title=p.text.match(/^# (.+)$/m)?.[1]??p.route;
 const references=[

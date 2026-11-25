@@ -16,7 +16,7 @@ Build MCP servers and plugins with shared `message_signed` transport authenticat
 3. For native plugins, implement `McpPlugin` and export with `export_mcp_plugin!`.
 4. When access differs by signed user, stamp `tools/list` with `_meta.accessible` via `McpToolAccessMeta`.
 
-Use [Getting started](/getting-started/) for install and first wiring. The [message_signed contract](/message-signed/) is the wire specification.
+Use [Getting started](/getting-started/) for install and first wiring. The [message_signed contract](/message-signed/) is the wire specification. Tool authors who return charts use the [charts](/charts/) contract.
 
 ## API reference
 

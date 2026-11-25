@@ -26,4 +26,7 @@ see `docs/MESSAGE_SIGNED.md`.
 not on the connection manifest. Use `icon_svg_to_mcp_icons` for SVG. Setup auth / inject stay on
 `connection`. Field matrix: `docs/MCP_IDENTITY.md`.
 
+**Charts:** return `CallToolResult::chart(spec, summary)` so AiProxy / Aurora.AI can render
+declarative chart JSON (`docs/CHARTS.md`). Always include the text summary for the LLM.
+
 License: MIT.

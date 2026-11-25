@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0 — 2026-11-25
+
+- **MCP chart content helpers.** Declarative chart JSON (`line`, `bar`, `donut`, `gauge`) for tool
+  results: MIME `application/vnd.aiproxy.chart+json` in an MCP embedded `resource` block plus a text
+  summary. Schema: `docs/CHARTS.md`.
+  - **Rust:** `ChartSpec` / `CallToolResult::chart`; `ContentBlock` is now a tagged enum (`text` |
+    `resource`).
+  - **.NET:** `AiProxy.Mcp.Sdk.Charts` (`McpChartContent.CreateToolResultJson`, typed specs).
+  Hosts render with Aurora.AI `AuroraCharts` (not part of this package).
+
 ## 1.0.3 — 2026-11-25
 
 - **MCP wire identity on the plugin descriptor.** Rust `PluginDescriptor` gains `title`,
