@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2 — 2026-11-25
+
+- **Rust:** refresh `Cargo.lock` to the crate version so `cargo publish --locked` succeeds on release.
+
 ## 1.1.1 — 2026-11-25
 
 - **Rust clippy:** gauge validation uses `min >= max` so `cargo clippy -D warnings` passes on CI.
