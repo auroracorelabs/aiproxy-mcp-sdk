@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 — 2026-11-25
+
+- **Rust clippy:** gauge validation uses `min >= max` so `cargo clippy -D warnings` passes on CI.
+
 ## 1.1.0 — 2026-11-25
 
 - **MCP chart content helpers.** Declarative chart JSON (`line`, `bar`, `donut`, `gauge`) for tool
@@ -8,6 +12,8 @@
   - **Rust:** `ChartSpec` / `CallToolResult::chart`; `ContentBlock` is now a tagged enum (`text` |
     `resource`).
   - **.NET:** `AiProxy.Mcp.Sdk.Charts` (`McpChartContent.CreateToolResultJson`, typed specs).
+    `McpChartContent.CreatePayload` returns summary + MIME + URI + chart JSON for hosts that build
+    typed `CallToolResult` without depending on this package for ModelContextProtocol types.
   Hosts render with Aurora.AI `AuroraCharts` (not part of this package).
 
 ## 1.0.3 — 2026-11-25

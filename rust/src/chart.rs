@@ -162,7 +162,7 @@ impl ChartSpec {
                 if !min.is_finite() || !max.is_finite() || !value.is_finite() {
                     return Err("gauge min, max, and value must be finite".into());
                 }
-                if !(min < max) {
+                if min >= max {
                     return Err("gauge min must be less than max".into());
                 }
                 if *value < *min || *value > *max {
