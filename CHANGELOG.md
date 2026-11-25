@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.2 — 2026-11-25
+## 1.0.3 — 2026-11-25
 
 - **MCP wire identity on the plugin descriptor.** Rust `PluginDescriptor` gains `title`,
   `description`, and `icons` (MCP `Implementation` on `initialize`). Helper
@@ -12,6 +12,9 @@
   matrix: `docs/MCP_IDENTITY.md`.
 - **.NET:** typed connection-manifest models, `McpIconHelper`, and
   `MapMcpConnectionManifest` for non-plugin HTTP MCP hosts (e.g. Compass).
+
+## 1.0.2 — 2026-11-25
+
 - **SDK documentation site.** Custom static site under `docs/site/`: guides from package READMEs and
   `docs/MESSAGE_SIGNED.md`, DocFX + rustdoc API references, GitHub Pages workflow
   (`.github/workflows/docs.yml`). Local preview on port 8092. Setup and known gaps (Pages
