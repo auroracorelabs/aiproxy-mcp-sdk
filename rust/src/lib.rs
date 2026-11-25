@@ -1,11 +1,11 @@
-//! Native SDK for authoring `mcpserverhost` MCP plugins in Rust (or any language capable of the
+//! Native SDK for authoring MCP server plugins in Rust (or any language capable of the
 //! same C ABI — this crate is the Rust reference implementation of that contract).
 //!
 //! A plugin implements [`McpPlugin`] and calls [`export_mcp_plugin!`] once at crate root to
 //! generate the `extern "C"` exports (`mcp_plugin_descriptor`, `mcp_plugin_configure`,
 //! `mcp_plugin_call_tool`, `mcp_free_string`, `mcp_plugin_last_error`, plus the ABI v1.1
 //! `mcp_plugin_call_tool_ctx` / `mcp_plugin_list_tools_ctx` carrying the verified caller) the host
-//! (`McpServerHost`, .NET, `NativeLibrary.Load`s this crate's compiled `cdylib`) calls via
+//! (typically .NET via `NativeLibrary.Load` of this crate's compiled `cdylib`) calls via
 //! `dlopen`.
 //!
 //! See the [`log`] module for the standard logging surface (`log_error!`/`log_warn!`/etc.);

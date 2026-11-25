@@ -7,7 +7,7 @@ The single SDK for MCP servers and their clients: everything needed to **build**
 |------|---------|---------|
 | `dotnet/AiProxy.Mcp.Sdk` | NuGet [`AiProxy.Mcp.Sdk`](https://www.nuget.org/packages/AiProxy.Mcp.Sdk) — **netstandard2.0** + net8.0 | `message_signed` signer/verifier + per-caller `tools/list` accessibility (`McpToolAccessMeta` / `_meta.accessible`) |
 | `dotnet/AiProxy.Mcp.Sdk.AspNetCore` | NuGet [`AiProxy.Mcp.Sdk.AspNetCore`](https://www.nuget.org/packages/AiProxy.Mcp.Sdk.AspNetCore) — net8.0 | ASP.NET Core middleware `UseMessageSignature` for MCP servers on ASP.NET Core |
-| `rust` | crate [`aiproxy-mcp-sdk`](https://crates.io/crates/aiproxy-mcp-sdk) | Native (C ABI) plugins for McpServerHost: descriptor/tool types, `CallContext`, `export_mcp_plugin!` |
+| `rust` | crate [`aiproxy-mcp-sdk`](https://crates.io/crates/aiproxy-mcp-sdk) | Native (C ABI) plugins for an MCP plugin host: descriptor/tool types, `CallContext`, `export_mcp_plugin!` |
 
 ## message_signed in one paragraph
 
@@ -31,6 +31,14 @@ app.UseMessageSignature("/mcp");   // HttpContext.User = signed caller, claim "u
 - .NET: `AiProxy.Mcp.Sdk` (clients and servers, any runtime) or `AiProxy.Mcp.Sdk.AspNetCore`
   (ASP.NET Core servers).
 - Rust: `aiproxy-mcp-sdk = "1"`.
+
+## Documentation
+
+Guides and generated .NET / Rust API references are built by the
+[SDK documentation workflow](https://github.com/auroracorelabs/aiproxy-mcp-sdk/actions/workflows/docs.yml)
+and published to GitHub Pages when Pages is enabled. Setup, local preview and known gaps:
+[docs/PAGES.md](docs/PAGES.md). Expected project URL after the first deploy:
+https://auroracorelabs.github.io/aiproxy-mcp-sdk/
 
 ## Build and test
 

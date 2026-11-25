@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2 — 2026-11-25
+
+- **SDK documentation site.** Custom static site under `docs/site/`: guides from package READMEs and
+  `docs/MESSAGE_SIGNED.md`, DocFX + rustdoc API references, GitHub Pages workflow
+  (`.github/workflows/docs.yml`). Local preview on port 8092. Setup and known gaps (Pages
+  enablement, no product docs domain, no runnable examples yet): `docs/PAGES.md`.
+
 ## 1.0.1 — 2026-11-25
 
 - **Per-caller tool accessibility on `tools/list`.** Servers that authorize differently per signed

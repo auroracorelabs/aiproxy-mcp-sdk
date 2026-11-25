@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "mcp-sdk docs: preview [8092]",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/docs/site/serve.ts",
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "mcp-sdk docs: build",
+      "env": {
+        "PORT": "8092"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Local: (https?://\\S+)",
+        "uriFormat": "%s"
+      }
+    }
+  ]
+}

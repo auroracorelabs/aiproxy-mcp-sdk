@@ -3,3 +3,7 @@ obj/
 rust/target/
 artifacts/
 nupkgs/
+dist/
+build/
+docs/site/node_modules/
+docs/site/.venv/

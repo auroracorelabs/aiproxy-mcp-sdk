@@ -38,7 +38,7 @@ impl Level {
     /// Standard syslog priority number (see `sd-daemon(3)`, "Log Level Prefixes"). systemd's
     /// journal stdio bridge recognizes a leading `<N>` on a stderr/stdout line, strips it, and
     /// uses it to set the journal entry's `PRIORITY` field — giving accurate level-based
-    /// filtering/coloring in `journalctl` and the McpServerHost log UI without any text parsing.
+    /// filtering/coloring in `journalctl` and the host log UI without any text parsing.
     fn syslog_priority(self) -> u8 {
         match self {
             Level::Error => 3,
@@ -50,7 +50,7 @@ impl Level {
 }
 
 /// Builds the exact line [`log`] writes, without touching I/O — kept separate so the wire format
-/// (the actual contract systemd/journald and the McpServerHost log UI parse) is unit-testable
+/// (the actual contract systemd/journald and the host log UI parse) is unit-testable
 /// without redirecting the real stderr fd.
 fn format_line(level: Level, message: &str, is_terminal: bool) -> String {
     let mut single_line = message.replace('\n', " ");

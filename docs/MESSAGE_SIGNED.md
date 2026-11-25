@@ -75,7 +75,7 @@ When the same MCP exposes different tools to different signed users, `tools/list
 return the **full** tool catalogue for that server, and mark each entry with MCP `_meta`:
 
 ```json
-{ "name": "report_devices", "description": "...", "_meta": { "accessible": true } }
+{ "name": "example_tool", "description": "...", "_meta": { "accessible": true } }
 ```
 
 | `_meta.accessible` | Meaning |

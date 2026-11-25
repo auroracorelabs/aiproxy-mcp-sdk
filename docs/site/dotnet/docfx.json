@@ -1,0 +1,21 @@
+{
+  "metadata": [{
+    "src": [{"src": "../../..", "files": [
+      "dotnet/AiProxy.Mcp.Sdk/AiProxy.Mcp.Sdk.csproj",
+      "dotnet/AiProxy.Mcp.Sdk.AspNetCore/AiProxy.Mcp.Sdk.AspNetCore.csproj"
+    ]}],
+    "dest": "../../../build/docs-dotnet-metadata",
+    "properties": {"TargetFramework": "net8.0"}
+  }],
+  "build": {
+    "content": [{"src": "../../../build/docs-dotnet-metadata", "files": ["**/*.yml"]}, {"files": ["index.md"]}],
+    "dest": "../../../build/docs-api/dotnet",
+    "template": ["default", "modern"],
+    "globalMetadata": {
+      "_appTitle": "AiProxy MCP SDK — .NET",
+      "_appName": "AiProxy MCP SDK",
+      "_appFooter": "<a href='../../index.html'>SDK documentation</a> · <a href='https://github.com/auroracorelabs/aiproxy-mcp-sdk'>GitHub</a>",
+      "_disableContribution": true
+    }
+  }
+}

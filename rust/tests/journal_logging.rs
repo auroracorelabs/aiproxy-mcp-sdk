@@ -1,7 +1,7 @@
 //! Verifies the actual contract this whole feature exists for: a plugin built with
 //! `export_mcp_plugin!` writes journal-shaped lines to stderr — with no logging code of its own —
 //! whenever a tool call fails, panics, or `configure` fails. This is the same generated FFI code
-//! path McpServerHost calls via dlopen in production, exercised
+//! path the plugin host calls via dlopen in production, exercised
 //! here directly and with the real stderr fd captured (redirected via `dup2`, since systemd's
 //! journal bridge is what actually reads that fd in production — not something a unit test can
 //! stand up, so this is the closest faithful proxy).
