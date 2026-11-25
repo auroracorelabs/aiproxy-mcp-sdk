@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "marked": "17.0.0",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   },
   "overrides": {
     "minimatch": "11.0.1"
