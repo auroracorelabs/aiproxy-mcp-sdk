@@ -68,3 +68,28 @@ Modes: `off` (no verification), `optional` (unsigned requests pass; present-but-
 
 Client roles and groups are information only: authorization is the server's decision, from
 `username`. An unknown user should see nothing.
+
+## Per-caller tool accessibility (`tools/list`)
+
+When the same MCP exposes different tools to different signed users, `tools/list` should still
+return the **full** tool catalogue for that server, and mark each entry with MCP `_meta`:
+
+```json
+{ "name": "report_devices", "description": "...", "_meta": { "accessible": true } }
+```
+
+| `_meta.accessible` | Meaning |
+|--------------------|---------|
+| `true` | This signed caller may invoke the tool |
+| `false` | Tool exists but this caller must not invoke it |
+| omitted | Legacy / unannotated server — clients treat as accessible |
+
+SDK helpers (`.NET` `McpToolAccessMeta`):
+
+- Server: `tool.Meta = McpToolAccessMeta.SetAccessible(tool.Meta, allowed);`
+- Client: `McpToolAccessMeta.TryGetAccessible(tool.Meta)` / `IsAccessibleOrDefault`
+- Optional description stamp / invoke deny strings:
+  `InaccessibleDescriptionPrefix`, `InaccessibleInvokeMessage`
+
+Hosts that **filter** `tools/list` down to the caller's census (instead of annotating) remain
+valid; clients that see only accessible names simply never learn about the denied set.

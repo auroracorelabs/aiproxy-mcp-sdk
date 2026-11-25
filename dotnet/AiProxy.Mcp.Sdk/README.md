@@ -12,6 +12,8 @@ trimming and Native AOT compatible).
   one verifying process per audience). Apply your own permissions to `username`. ASP.NET Core hosts
   use the middleware in
   [AiProxy.Mcp.Sdk.AspNetCore](https://www.nuget.org/packages/AiProxy.Mcp.Sdk.AspNetCore).
+- **Per-user tool census**: when access differs by signed user, stamp every `tools/list` entry with
+  `_meta.accessible` via `McpToolAccessMeta` (see [MESSAGE_SIGNED.md](../../docs/MESSAGE_SIGNED.md)).
 
 ```csharp
 using var key = McpSigningKey.LoadOrCreate("mcp-signing-key.pem");

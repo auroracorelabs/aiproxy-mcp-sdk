@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 — 2026-11-25
+
+- **Per-caller tool accessibility on `tools/list`.** Servers that authorize differently per signed
+  user stamp each listed tool with `_meta.accessible` (`true`/`false`) via
+  `McpToolAccessMeta.SetAccessible`. Clients read it with `TryGetAccessible` /
+  `IsAccessibleOrDefault` (missing key ⇒ accessible, for legacy hosts). Also ships
+  `InaccessibleDescriptionPrefix` and `InaccessibleInvokeMessage` so gateways can label and deny
+  inaccessible tools consistently. Documented in `docs/MESSAGE_SIGNED.md`.
+
 ## 1.0.0 — 2026-11-24
 
 - `message_signed` ES256 signer (`McpMessageSigner`, `McpSigningHandler`) and verifier

@@ -5,7 +5,7 @@ The single SDK for MCP servers and their clients: everything needed to **build**
 
 | Path | Package | Use for |
 |------|---------|---------|
-| `dotnet/AiProxy.Mcp.Sdk` | NuGet [`AiProxy.Mcp.Sdk`](https://www.nuget.org/packages/AiProxy.Mcp.Sdk) — **netstandard2.0** + net8.0 | `message_signed` signer (`McpMessageSigner`, `McpSigningHandler`) and verifier (`MessageSignatureVerifier`): .NET Framework 4.7.2+, Mono, Unity, every .NET |
+| `dotnet/AiProxy.Mcp.Sdk` | NuGet [`AiProxy.Mcp.Sdk`](https://www.nuget.org/packages/AiProxy.Mcp.Sdk) — **netstandard2.0** + net8.0 | `message_signed` signer/verifier + per-caller `tools/list` accessibility (`McpToolAccessMeta` / `_meta.accessible`) |
 | `dotnet/AiProxy.Mcp.Sdk.AspNetCore` | NuGet [`AiProxy.Mcp.Sdk.AspNetCore`](https://www.nuget.org/packages/AiProxy.Mcp.Sdk.AspNetCore) — net8.0 | ASP.NET Core middleware `UseMessageSignature` for MCP servers on ASP.NET Core |
 | `rust` | crate [`aiproxy-mcp-sdk`](https://crates.io/crates/aiproxy-mcp-sdk) | Native (C ABI) plugins for McpServerHost: descriptor/tool types, `CallContext`, `export_mcp_plugin!` |
 
@@ -15,8 +15,10 @@ The client signs every HTTP request with its ES256 key (`Mcp-Message-Signature`,
 method, path, body hash, audience, issuer and a single-use `jti`) and asserts the acting user: `sub`,
 `username`, `name`, `email`, `groups`, `roles`. The server trusts only public keys in its
 trusted-signers directory (`<kid>.pem`, stem = SPKI hash prefix) and applies **its own** permissions
-to `username`. Replay protection is **per process** — one verifying host per audience. Wire
-format: [docs/MESSAGE_SIGNED.md](docs/MESSAGE_SIGNED.md).
+to `username`. When access differs by user, stamp every `tools/list` entry with
+`_meta.accessible` via `McpToolAccessMeta` so clients can show the full census. Replay protection
+is **per process** — one verifying host per audience. Wire format:
+[docs/MESSAGE_SIGNED.md](docs/MESSAGE_SIGNED.md).
 
 ```csharp
 // MCP endpoint inside an existing ASP.NET app: directory created on first start, fail closed until a key is installed

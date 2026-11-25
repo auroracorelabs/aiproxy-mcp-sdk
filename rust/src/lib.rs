@@ -181,6 +181,11 @@ impl CallToolResult {
 
 pub type PluginResult<T> = Result<T, String>;
 
+/// MCP tool `_meta` key for per-caller accessibility on `tools/list` (`true` / `false`).
+/// Hosts that annotate rather than filter the list should stamp this on every tool; clients
+/// treat a missing key as accessible. See `docs/MESSAGE_SIGNED.md`.
+pub const TOOL_ACCESS_META_KEY: &str = "accessible";
+
 /// Verified caller of a request (ABI v1.1). Built by the host only from a `message_signed`
 /// signature it has verified; when the request was not signed every field is empty
 /// ([`CallContext::has_user`] is false). Never derive identity from tool arguments instead.

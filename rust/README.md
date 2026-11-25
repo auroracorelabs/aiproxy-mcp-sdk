@@ -19,4 +19,7 @@ Identity in `CallContext` comes only from a request signature the host has verif
 Override `call_tool_with_context` (or set `requires_user_context`) when the plugin must see the
 caller — the default implementation ignores context and calls `call_tool`.
 
+Per-caller tool accessibility on `tools/list` uses `_meta.accessible` (`TOOL_ACCESS_META_KEY`);
+see `docs/MESSAGE_SIGNED.md`.
+
 License: MIT.
