@@ -16,7 +16,7 @@ jobs:
       DOTNET_NOLOGO: "1"
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - name: Test (net8.0 build)
@@ -39,7 +39,7 @@ jobs:
       DOTNET_NOLOGO: "1"
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - uses: actions/download-artifact@v7
